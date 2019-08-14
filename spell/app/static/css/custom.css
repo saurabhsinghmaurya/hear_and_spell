@@ -1,0 +1,100 @@
+.nav-tabs {
+    margin-bottom: 15px;
+}
+.sign-with {
+    margin-top: 25px;
+    padding: 20px;
+}
+div#OR {
+    height: 30px;
+    width: 30px;
+    border: 1px solid #C2C2C2;
+    border-radius: 50%;
+    font-weight: bold;
+    line-height: 28px;
+    text-align: center;
+    font-size: 12px;
+    float: right;
+    position: absolute;
+    right: -16px;
+    top: 40%;
+    z-index: 1;
+    background: #DFDFDF;
+}
+
+    #third{
+     background: url("{% static 'css/dashboard.css' %} 'images/wordcloud.png' ") 50% 0 no-repeat fixed;
+     color: white;
+     height: 650px;
+     padding: 100px 0 0 0;
+     }
+
+     .counter
+{
+    background-color: #ffffff;
+    text-align: center;
+}
+.correct,.wrong
+{
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+.counter-count
+{
+    font-size: 12px;
+    background-color: #337ab7;
+    border-radius: 50%;
+    position: relative;
+    color: #ffffff;
+    text-align: center;
+    line-height: 49px;
+    width: 49px;
+    height: 49px;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+    -ms-border-radius: 50%;
+    -o-border-radius: 50%;
+    display: inline-block;
+}
+.counter-count-red
+{
+    font-size: 12px;
+    background-color: #d9534f;
+    border-radius: 50%;
+    position: relative;
+    color: #ffffff;
+    text-align: center;
+    line-height: 49px;
+    width: 49px;
+    height: 49px;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+    -ms-border-radius: 50%;
+    -o-border-radius: 50%;
+    display: inline-block;
+}
+
+.counter-count-green
+{
+    font-size: 12px;
+    background-color: #5cb85c!important;
+    border-radius: 50%;
+    position: relative;
+    color: #ffffff;
+    text-align: center;
+    line-height: 49px;
+    width: 49px;
+    height: 49px;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+    -ms-border-radius: 50%;
+    -o-border-radius: 50%;
+    display: inline-block;
+}
+
+.employee-p,.customer-p,.order-p,.design-p
+{
+    font-size: 12px;
+    color: #000000;
+    line-height: 17px;
+}

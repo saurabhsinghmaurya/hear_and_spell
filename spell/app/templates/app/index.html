@@ -1,0 +1,190 @@
+{% extends 'app/base.html' %}
+
+{% block content %}
+
+
+<div class="modal-dialog modal-lg">
+    <div class="modal-content">
+        <div class="modal-header">
+            {% if start == 1%}
+            <form method="post" action="/stop">
+                {% csrf_token %}
+                <button type="submit" class="close">
+                    x
+                </button>
+            </form>
+            {% endif %}
+            <h4 class="modal-title" id="myModalLabel">
+                Hear and Spell </h4>
+        </div>
+        {% if start == 1%}
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-md-8" style="border-right: 1px dotted #C2C2C2;padding-right: 30px;">
+
+
+                    <form role="form" class="form-horizontal" method="post" action="/check">
+                        {% csrf_token %}
+                        <input type="hidden" value="{{word}}" name="word">
+                        <div class="form-group">
+
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" name="ans" placeholder="Word" autofocus
+                                       onfocus="responsiveVoice.speak('{{word}}.');"/>
+                            </div>
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-sm-2">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="glyphicon glyphicon-ok"></i>
+                                    Check
+                                </button>
+
+                            </div>
+                            <div class="col-sm-2">
+                                <button type="button" onclick="responsiveVoice.speak('{{word}}');"
+                                        class="btn btn-primary btn-sm">
+                                    <i class="glyphicon glyphicon-repeat"></i>
+                                    Replay
+                                </button>
+
+                            </div>
+                            <div class="col-sm-2">
+                                <button type="button" onclick="responsiveVoice.speak('{{example}}');"
+                                        class="btn btn-primary btn-sm">
+                                    <i class="glyphicon glyphicon-repeat"></i>
+                                    Example
+                                </button>
+
+                            </div>
+
+                        </div>
+                        <br>
+                        {% if 'word'  in request.session %}
+                        {% if 'res'  in request.session %}
+                        {% if 'correct' == request.session.res %}
+                        <div class="alert alert-success alert-dismissable">
+                            <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                            <strong>Correct!</strong> Last word was {{request.session.word}}. Rank {{rank}}
+                        </div>
+                        {% endif %}
+                         {% if 'wrong' == request.session.res %}
+                        <div class="alert alert-danger alert-dismissable">
+                            <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                             <strong>Wrong!</strong> Last word was {{request.session.word}}. Rank {{rank}}
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                        {% endif %}
+                    </form>
+
+                </div>
+                <div class="col-md-4">
+                    <div class="counter">
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-lg-1 col-md-1 col-sm-1 col-xs-8">
+                                    <div class="correct">
+                                        <p class="counter-count">{{percent}}</p>
+                                        <p class="employee-p">Percentage</p>
+                                    </div>
+                                </div>
+                                <div class="col-lg-1 col-md-1 col-sm-1 col-xs-8">
+                                    <div class="correct">
+                                        <p class="counter-count-green">{{correct}}</p>
+                                        <p class="employee-p">Correct</p>
+                                    </div>
+                                </div>
+                                <div class="col-lg-1 col-md-1 col-sm-1 col-xs-8">
+                                    <div class="wrong">
+                                        <p class="counter-count-red">{{wrong}}</p>
+                                        <p class="employee-p">Wrong</p>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if start == 0%}
+        <div class="modal-body">
+
+
+            <form role="form" class="form-horizontal" action="/start" method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="min_len" class="col-sm-2 control-label">
+                                Length
+                            </label>
+                            <div class="col-sm-10">
+                                <input type="number" id="min_len" name="min_len" class="form-control" placeholder="Min word length"
+                                       min="1" max="20"
+                                       required autofocus/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">
+
+                            </label>
+                            <div class="col-sm-10">
+                                <input type="number" class="form-control" name="max_len" placeholder="Max word length"
+                                       min="1" max="20"
+                                       required autofocus/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label ">
+                                Rank
+                            </label>
+                            <div class="col-sm-10">
+                                <input type="number" name="min_rank" class="form-control" placeholder="Min word rank"
+                                       min="1"
+                                       max="20000" required autofocus/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="word" class="col-sm-2 control-label">
+
+                            </label>
+                            <div class="col-sm-10">
+                                <input type="number" name="max_rank" class="form-control" placeholder="Max word rank"
+                                       min="1"
+                                       max="20000" required autofocus/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+
+                    <div class="col-sm-10">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="glyphicon glyphicon glyphicon-bullhorn"></i>
+                            Start Test
+                        </button>
+
+                    </div>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
