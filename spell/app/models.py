@@ -15,7 +15,7 @@ class User(models.Model):
 
 
 class Test(models.Model):
-    uid = models.IntegerField(db_index=True,default=-1)
+    uid = models.IntegerField(db_index=True, default=-1)
     min_len = models.IntegerField(db_index=True)
     max_len = models.IntegerField(db_index=True)
     min_rank = models.IntegerField(db_index=True)
@@ -35,5 +35,3 @@ class WordInfo(models.Model):
 class WordList(models.Model):
     word = models.CharField(db_index=True, max_length=50)
     length = models.IntegerField(default=0)
-
-

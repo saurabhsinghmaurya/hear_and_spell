@@ -1,11 +1,20 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from random import randint
-from django.shortcuts import render
-from .models import User, Test, WordList
+
+import json
 import re
 
+import random
+
+from django.shortcuts import render
+from django.contrib.staticfiles.storage import staticfiles_storage
+
+from .models import Test, User, WordList
+
 # Create your views here.
+EN_HI_DICT = None
+EN_HI_DICT_FILE = 'en_hi.json'
+
 
 def read():
     import urllib
@@ -14,31 +23,27 @@ def read():
     f = urllib.urlopen(link)
     myfile = str(f.read())
     for line in myfile.splitlines():
-        word = WordList.objects.create(word=line,length=line.__len__())
+        word = WordList.objects.create(word=line, length=line.__len__())
         word.save()
 
 
-def example(query):
-    import urllib
+def load_dict():
+    global EN_HI_DICT
+    if EN_HI_DICT is None:
+        print("loading en-hi dict file")
+        p = staticfiles_storage.path(EN_HI_DICT_FILE)
+        fp = open(p)
+        EN_HI_DICT = json.load(fp)
 
-    link = "https://skell.sketchengine.co.uk/run.cgi/concordance?lpos=&query=" + query
-    f = urllib.urlopen(link)
-    html = str(f.read())
-    res = ''
-    for line in html.splitlines():
-        if line.lstrip().startswith('<span class="lc">'):
-            res = res + \
-                re.sub('\</span>$', '', re.sub('^<span class="lc">',
-                                               '', line.lstrip().rstrip()))
-        if line.lstrip().startswith('<span class="kw">'):
-            res = res + \
-                re.sub('\</span>$', '', re.sub('^<span class="kw">',
-                                               '', line.lstrip().rstrip()))
-        if line.lstrip().startswith('<span class="rc">'):
-            res = res + \
-                re.sub('\</span>$', '', re.sub('^<span class="rc">',
-                                               '', line.lstrip().rstrip()))
-            return res
+
+def get_hindi(word):
+    word_s = '"%s"' % word
+    word_info = EN_HI_DICT.get(word_s)
+    print("word_info: %s", word_info)
+    if word_info:
+        return word_info
+    elif word.endswith('s'):
+        return get_hindi(word[:len(word) - 1])
 
 
 def get_user(request):
@@ -49,18 +54,32 @@ def get_user(request):
     return user
 
 
-def get_word(test):
-    word_list = WordList.objects.all().filter(id__gte=test.min_rank, id__lte=test.max_rank,
-                                              length__gte=test.min_len, length__lte=test.max_len)
-    # word_list = WordList.objects.all().filter(id__lte = 4)
-    #read()
-    size = len(word_list)
-    ind = randint(0, size-1)
-    return word_list[ind].word, word_list[ind].id
+def get_word(test, request):
+    word_list = None
+    word_list = WordList.objects.all().filter(id__gte=test.min_rank,
+                                              id__lte=test.max_rank,
+                                              length__gte=test.min_len,
+                                              length__lte=test.max_len)
+    if not request.session.has_key('word_list_idx'):
+        request.session['word_list_idx'] = 0
+
+    request.session['word_list_len'] = len(word_list)
+    word_list_idx = request.session['word_list_idx']
+    request.session['word_list_idx'] = (word_list_idx + 1) % len(word_list)
+    request.session['progress_percent'] = (request.session['word_list_idx'] *
+                                           100 //
+                                           request.session['word_list_len'])
+
+    if word_list:
+        word_obj = word_list[word_list_idx]
+        return word_obj.word, word_obj.id
+    return (None, None)
 
 
 def index(request):
+    load_dict()
     if request.session.has_key('email'):
+        #import pdb; pdb.set_trace()
         user = get_user(request)
         if user is not None:
             context = {'start': user.start}
@@ -70,18 +89,15 @@ def index(request):
                 context['wrong'] = test.wrong
                 total = test.correct + test.wrong
                 if total != 0:
-                    context['percent'] = test.correct * 100 / total
+                    context['correct_percent'] = test.correct * 100 // total
                 else:
-                    context['percent'] = 0
-                word, rank = get_word(test)
+                    context['correct_percent'] = 0
+                word, rank = get_word(test, request)
+                if word is None:
+                    return stop(request)
                 context['word'] = word
                 context['rank'] = rank
-                context['example'] = "test"#example(context['word'])
-                # for word in WordList.objects.all().values_list('word'):
-                #     try:
-                #         print word[0] + " : " + example(word[0])
-                #     except:
-                #         print "error"
+                context['hindi'] = get_hindi(word)
 
             return render(request, 'app/index.html', context)
 
@@ -126,8 +142,7 @@ def register(request):
 
 
 def logout(request):
-    for key in request.session.keys():
-        del request.session[key]
+    request.session.clear()
     return login(request)
 
 
@@ -140,10 +155,13 @@ def start(request):
         max_len = request.POST.get('max_len')
         min_rank = request.POST.get('min_rank')
         max_rank = request.POST.get('max_rank')
-        if (min_len > max_len) | (min_rank > max_rank):
+        if (min_len > max_len) or (min_rank >= max_rank):
             return index(request)
-        test = Test.objects.create(
-            uid=user.id, min_len=min_len, max_len=max_len, min_rank=min_rank, max_rank=max_rank)
+        test = Test.objects.create(uid=user.id,
+                                   min_len=min_len,
+                                   max_len=max_len,
+                                   min_rank=min_rank,
+                                   max_rank=max_rank)
         test.save()
         user.start = 1
         user.test_id = test.id
@@ -158,6 +176,10 @@ def stop(request):
             if user is None:
                 return index(request)
             user.start = 0
+            if request.session.has_key('word_list_idx'):
+                request.session['word_list_idx'] = 0
+            if request.session.has_key('result'):
+                del request.session['result']
             user.save()
         return index(request)
     else:
@@ -174,9 +196,15 @@ def check(request):
             ans = request.POST.get('ans')
             test = Test.objects.get(id=user.test_id)
             request.session['word'] = word
+            if not request.session.has_key('result'):
+                request.session['result'] = {}
             if word.lower() != ans.lower():
                 request.session['res'] = 'wrong'
                 test.wrong = test.wrong + 1
+                request.session['result'][word.lower()] = {
+                'res': request.session['res'],
+                'answer': ans.lower()
+                }
             else:
                 request.session['res'] = 'correct'
                 test.correct = test.correct + 1

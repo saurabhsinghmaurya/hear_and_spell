@@ -29,8 +29,8 @@
                         <div class="form-group">
 
                             <div class="col-sm-10">
-                                <input type="text" class="form-control" name="ans" placeholder="Word" autofocus
-                                       onfocus="responsiveVoice.speak('{{word}}.');"/>
+                                <input type="text" class="form-control" name="ans" placeholder="Word" autofocus required
+                                    onfocus="responsiveVoice.speak('{{word}}.');" />
                             </div>
                         </div>
 
@@ -45,23 +45,19 @@
                             </div>
                             <div class="col-sm-2">
                                 <button type="button" onclick="responsiveVoice.speak('{{word}}');"
-                                        class="btn btn-primary btn-sm">
+                                    class="btn btn-primary btn-sm">
                                     <i class="glyphicon glyphicon-repeat"></i>
                                     Replay
                                 </button>
 
                             </div>
                             <div class="col-sm-2">
-                                <button type="button" onclick="responsiveVoice.speak('{{example}}');"
-                                        class="btn btn-primary btn-sm">
-                                    <i class="glyphicon glyphicon-repeat"></i>
-                                    Example
-                                </button>
-
+                                <div class="btn btn-primary btn-sm"> {{hindi}} </div>
                             </div>
 
                         </div>
                         <br>
+
                         {% if 'word'  in request.session %}
                         {% if 'res'  in request.session %}
                         {% if 'correct' == request.session.res %}
@@ -70,10 +66,10 @@
                             <strong>Correct!</strong> Last word was {{request.session.word}}. Rank {{rank}}
                         </div>
                         {% endif %}
-                         {% if 'wrong' == request.session.res %}
+                        {% if 'wrong' == request.session.res %}
                         <div class="alert alert-danger alert-dismissable">
                             <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-                             <strong>Wrong!</strong> Last word was {{request.session.word}}. Rank {{rank}}
+                            <strong>Wrong!</strong> Last word was {{request.session.word}}. Rank {{rank}}
                         </div>
                         {% endif %}
                         {% endif %}
@@ -87,7 +83,7 @@
                             <div class="row">
                                 <div class="col-lg-1 col-md-1 col-sm-1 col-xs-8">
                                     <div class="correct">
-                                        <p class="counter-count">{{percent}}</p>
+                                        <p class="counter-count">{{correct_percent}}</p>
                                         <p class="employee-p">Percentage</p>
                                     </div>
                                 </div>
@@ -112,6 +108,33 @@
                 </div>
             </div>
         </div>
+        <div class="progress">
+            <div class="progress-bar" role="progressbar" style="width: {{request.session.progress_percent}}%"
+                aria-valuenow="{{request.session.progress_percent}}" aria-valuemin="0" aria-valuemax="100">
+                {{request.session.word_list_idx}}/{{request.session.word_list_len}}
+            </div>
+        </div>
+        {% if 'result'  in request.session %}
+        <table id="dtBasicExample" class="table table-striped table-bordered table-sm">
+            <thead>
+                <tr>
+                    <th class="th-sm">Word </th>
+                    <th class="th-sm">Answer</th>
+                    <th class="th-sm">Result</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for k, v in request.session.result.items%}
+                <tr>
+                    <td>{{k}}</td>
+                    <td>{{v.answer}}</td>
+                    <td>{{v.res}}</td>
+                </tr>
+            {% endfor %}
+
+            </tbody>
+        </table>
+        {% endif %}
         {% endif %}
         {% if start == 0%}
         <div class="modal-body">
@@ -126,9 +149,8 @@
                                 Length
                             </label>
                             <div class="col-sm-10">
-                                <input type="number" id="min_len" name="min_len" class="form-control" placeholder="Min word length"
-                                       min="1" max="20"
-                                       required autofocus/>
+                                <input type="number" id="min_len" name="min_len" class="form-control"
+                                    placeholder="Min word length" min="1" max="20" required autofocus />
                             </div>
                         </div>
                     </div>
@@ -139,8 +161,7 @@
                             </label>
                             <div class="col-sm-10">
                                 <input type="number" class="form-control" name="max_len" placeholder="Max word length"
-                                       min="1" max="20"
-                                       required autofocus/>
+                                    min="1" max="20" required autofocus />
                             </div>
                         </div>
                     </div>
@@ -153,8 +174,7 @@
                             </label>
                             <div class="col-sm-10">
                                 <input type="number" name="min_rank" class="form-control" placeholder="Min word rank"
-                                       min="1"
-                                       max="20000" required autofocus/>
+                                    min="1" max="20000" required autofocus />
                             </div>
                         </div>
                     </div>
@@ -165,8 +185,7 @@
                             </label>
                             <div class="col-sm-10">
                                 <input type="number" name="max_rank" class="form-control" placeholder="Max word rank"
-                                       min="1"
-                                       max="20000" required autofocus/>
+                                    min="1" max="20000" required autofocus />
                             </div>
                         </div>
                     </div>
