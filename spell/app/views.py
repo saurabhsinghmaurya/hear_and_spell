@@ -2,14 +2,14 @@
 from __future__ import unicode_literals
 
 import json
-import re
-
 import random
+import re
+import urllib.request
 
-from django.shortcuts import render
 from django.contrib.staticfiles.storage import staticfiles_storage
+from django.shortcuts import render
 
-from .models import Test, User, WordList
+from .models import Test, User, WordInfo, WordList
 
 # Create your views here.
 EN_HI_DICT = None
@@ -17,12 +17,11 @@ EN_HI_DICT_FILE = 'en_hi.json'
 
 
 def read():
-    import urllib
 
     link = "https://raw.githubusercontent.com/first20hours/google-10000-english/master/20k.txt"
-    f = urllib.urlopen(link)
-    myfile = str(f.read())
-    for line in myfile.splitlines():
+    word_list = urllib.request.urlopen(link)
+    for line in word_list:
+        line = line.decode().strip()
         word = WordList.objects.create(word=line, length=line.__len__())
         word.save()
 
@@ -39,7 +38,6 @@ def load_dict():
 def get_hindi(word):
     word_s = '"%s"' % word
     word_info = EN_HI_DICT.get(word_s)
-    print("word_info: %s", word_info)
     if word_info:
         return word_info
     elif word.endswith('s'):
@@ -65,7 +63,9 @@ def get_word(test, request):
 
     request.session['word_list_len'] = len(word_list)
     word_list_idx = request.session['word_list_idx']
-    request.session['word_list_idx'] = (word_list_idx + 1) % len(word_list)
+    request.session['word_list_idx'] = word_list_idx + 1
+    if word_list_idx >= len(word_list):
+        return (None, None)
     request.session['progress_percent'] = (request.session['word_list_idx'] *
                                            100 //
                                            request.session['word_list_len'])
@@ -195,6 +195,13 @@ def check(request):
             word = request.POST.get('word')
             ans = request.POST.get('ans')
             test = Test.objects.get(id=user.test_id)
+            try:
+                word_info = WordInfo.objects.get(word=word, uid=user.id)
+            except WordInfo.DoesNotExist:
+                word_info = None
+
+            if word_info is None:
+                word_info = WordInfo.objects.create(word=word, uid=user.id)
             request.session['word'] = word
             if not request.session.has_key('result'):
                 request.session['result'] = {}
@@ -202,13 +209,16 @@ def check(request):
                 request.session['res'] = 'wrong'
                 test.wrong = test.wrong + 1
                 request.session['result'][word.lower()] = {
-                'res': request.session['res'],
-                'answer': ans.lower()
+                    'res': request.session['res'],
+                    'answer': ans.lower()
                 }
+                word_info.wrong = word_info.wrong + 1
             else:
                 request.session['res'] = 'correct'
                 test.correct = test.correct + 1
+                word_info.correct = word_info.correct + 1
             test.save()
+            word_info.save()
 
         return index(request)
     else:

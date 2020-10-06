@@ -127,7 +127,7 @@
             {% for k, v in request.session.result.items%}
                 <tr>
                     <td>{{k}}</td>
-                    <td>{{v.answer}}</td>
+                    <td><del>{{v.answer}}</del></td>
                     <td>{{v.res}}</td>
                 </tr>
             {% endfor %}

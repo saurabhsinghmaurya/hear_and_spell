@@ -25,11 +25,10 @@ class Test(models.Model):
 
 
 class WordInfo(models.Model):
-    rank = models.IntegerField(db_index=True)
+    word = models.CharField(db_index=True, max_length=50)
     uid = models.IntegerField(db_index=True)
     correct = models.IntegerField(db_index=True, default=0)
     wrong = models.IntegerField(db_index=True, default=0)
-    correct_after_last_wrong = models.IntegerField(db_index=True, default=0)
 
 
 class WordList(models.Model):
