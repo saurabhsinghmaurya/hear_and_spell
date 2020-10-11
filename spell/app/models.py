@@ -20,6 +20,9 @@ class Test(models.Model):
     max_len = models.IntegerField(db_index=True)
     min_rank = models.IntegerField(db_index=True)
     max_rank = models.IntegerField(db_index=True)
+    current_word_idx = models.IntegerField(default=0)
+    total_words = models.IntegerField(default=0)
+    completed = models.IntegerField(default=0)
     correct = models.IntegerField(db_index=True, default=0)
     wrong = models.IntegerField(db_index=True, default=0)
 
