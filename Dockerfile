@@ -9,4 +9,8 @@ WORKDIR /code
 
 COPY spell /code/
 
+RUN python manage.py makemigrations
+RUN python manage.py migrate
+RUN python manage.py loaddata 20k.json
+
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

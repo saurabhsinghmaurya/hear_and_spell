@@ -1,0 +1,18 @@
+[
+    {
+      "model": "app.WordList",
+      "pk": 1,
+      "fields": {
+        "word": "William",
+        "length": "5"
+      }
+    },
+    {
+      "model": "app.WordList",
+      "pk": 2,
+      "fields": {
+        "word": "Miguel",
+        "length": "6"
+      }
+    }
+]
