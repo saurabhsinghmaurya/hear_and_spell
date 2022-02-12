@@ -1,43 +1,18 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import json
+
 import logging
 import random
-import re
-import urllib.request
-from urllib import request
 
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.shortcuts import render
 
+from .apps import EN_HI_DICT
 from .models import Result, Test, User, WordInfo, WordList
 
 # Create your views here.
-EN_HI_DICT = None
-EN_HI_DICT_FILE = 'en_hi.json'
-
 logging.basicConfig(level=logging.DEBUG)
-
-
-def read():
-
-    link = "https://raw.githubusercontent.com/first20hours/google-10000-english/master/20k.txt"
-    word_list = urllib.request.urlopen(link)
-    for line in word_list:
-        line = line.decode().strip()
-        word = WordList.objects.create(word=line, length=line.__len__())
-        word.save()
-
-
-def load_dict():
-    global EN_HI_DICT
-    if EN_HI_DICT is None:
-        logging.info("loading en-hi dict file")
-        p = staticfiles_storage.path(EN_HI_DICT_FILE)
-        fp = open(p)
-        EN_HI_DICT = json.load(fp)
-
 
 def get_hindi(word):
     word_s = '"%s"' % word
@@ -75,7 +50,6 @@ def get_word(test, request):
 
 
 def index(request):
-    load_dict()
     if request.session.has_key('email'):
         user = get_user(request)
         if user is not None:
