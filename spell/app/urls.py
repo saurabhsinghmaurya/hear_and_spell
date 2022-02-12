@@ -1,16 +1,14 @@
-from django.conf.urls import url
+from django.urls import re_path
 from . import views
 
 urlpatterns = [
-
-    url(r'^$', views.index, name='index'),
-    url(r'^login', views.login, name='login'),
-    url(r'^register', views.register, name='reg'),
-    url(r'^start', views.start, name='start'),
-    url(r'^logout', views.logout, name='logout'),
-    url(r'^stop', views.stop, name='stop'),
-    url(r'^check', views.check, name='check'),
-    url(r'^word', views.word_info, name='word_info'),
-    url(r'^resume', views.resume_test, name='resume_test'),
-
+    re_path(r'^$', views.index, name='index'),
+    re_path(r'^login', views.login, name='login'),
+    re_path(r'^register', views.register, name='reg'),
+    re_path(r'^start', views.start, name='start'),
+    re_path(r'^logout', views.logout, name='logout'),
+    re_path(r'^stop', views.stop, name='stop'),
+    re_path(r'^check', views.check, name='check'),
+    re_path(r'^word', views.word_info, name='word_info'),
+    re_path(r'^resume', views.resume_test, name='resume_test'),
 ]

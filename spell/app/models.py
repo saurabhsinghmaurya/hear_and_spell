@@ -37,3 +37,9 @@ class WordInfo(models.Model):
 class WordList(models.Model):
     word = models.CharField(db_index=True, max_length=50)
     length = models.IntegerField(default=0)
+
+class Result(models.Model):
+    test_id = models.IntegerField(db_index=True)
+    word = models.CharField(db_index=True, max_length=50)
+    answer = models.CharField(max_length=50)
+    rank = models.IntegerField()

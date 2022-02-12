@@ -2,16 +2,16 @@
 from __future__ import unicode_literals
 
 import json
+import logging
 import random
 import re
-from urllib import request
 import urllib.request
-import logging
+from urllib import request
 
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.shortcuts import render
 
-from .models import Test, User, WordInfo, WordList
+from .models import Result, Test, User, WordInfo, WordList
 
 # Create your views here.
 EN_HI_DICT = None
@@ -57,27 +57,20 @@ def get_user(request):
 
 
 def get_word(test, request):
-    word_list = WordList.objects.all().filter(id__gte=test.min_rank,
-                                              id__lte=test.max_rank,
-                                              length__gte=test.min_len,
-                                              length__lte=test.max_len)
-    if not request.session.has_key('word_list_idx'):
-        request.session['word_list_idx'] = 0
+    word_list = Result.objects.all().filter(test_id=test.id).order_by("rank")
+    current_word_idx = test.current_word_idx
+    total_words = test.total_words
 
-    request.session['word_list_len'] = len(word_list)
-    word_list_idx = request.session['word_list_idx']
-    request.session['word_list_idx'] = word_list_idx + 1
-    if word_list_idx >= len(word_list):
+    if current_word_idx >= total_words:
         if word_list:
             test.completed = 1
         return (None, None)
-    request.session['progress_percent'] = (request.session['word_list_idx'] *
-                                           100 //
-                                           request.session['word_list_len'])
+    request.session['progress_percent'] = (current_word_idx * 100 //
+                                           total_words)
 
     if word_list:
-        word_obj = word_list[word_list_idx]
-        return word_obj.word, word_obj.id
+        word_obj = word_list[current_word_idx]
+        return word_obj.word, word_obj.rank
     return (None, None)
 
 
@@ -107,6 +100,23 @@ def index(request):
                 context['word'] = word
                 context['rank'] = rank
                 context['hindi'] = get_hindi(word)
+                context['current_word_idx'] = test.current_word_idx
+                context['total_words'] = test.total_words
+                context[
+                    'progress_percent'] = test.current_word_idx * 100 // test.total_words
+                previous_words_list = []
+                words_list = Result.objects.all().filter(
+                    test_id=test.id).order_by("rank")
+                for word in words_list:
+                    if word.answer != '-1' and word.word != word.answer:
+                        previous_words_list.append({
+                            'word': word.word,
+                            'answer': word.answer,
+                            'result' : 'correct' if word.word == word.answer else 'wrong'
+                        })
+                context['previous_words_list'] = previous_words_list
+
+
             else:
                 test_list = Test.objects.all().filter(uid=user.id).order_by("-id")
                 test_results = []
@@ -147,7 +157,7 @@ def login(request):
             if user is not None:
                 request.session['name'] = user.name
                 request.session['email'] = email
-                # read()
+                #read()
                 return index(request)
     return render(request, 'app/login.html', {})
 
@@ -174,6 +184,23 @@ def logout(request):
     return login(request)
 
 
+def filter_word_list(uid, word_list):
+    new_word_list = []
+    for word in word_list:
+        try:
+            word_info = WordInfo.objects.get(word=word.word, uid=uid)
+            score = word_info.correct - word_info.wrong * 2.5
+        except WordInfo.DoesNotExist:
+            score = 0
+        if score <= 0:
+            new_word_list.append(word)
+        else:
+            random_no = random.randint(1, 100)
+            if random_no < 80:
+                new_word_list.append(word)
+    return new_word_list
+
+
 def start(request):
     if request.method == 'POST':
         user = get_user(request)
@@ -192,12 +219,22 @@ def start(request):
                                                 length__gte=min_len,
                                                 length__lte=max_len)
         if word_list:
+
             test = Test.objects.create(uid=user.id,
                                        min_len=min_len,
                                        max_len=max_len,
                                        min_rank=min_rank,
                                        max_rank=max_rank,
                                        total_words=len(word_list))
+
+            total_selected_words = 0
+            word_list = filter_word_list(user.id, word_list)
+            for word in word_list:
+                result = Result.objects.create(test_id=test.id, word=word.word.lower(), answer='-1', rank=word.id)
+                total_selected_words = total_selected_words + 1
+                result.save()
+
+            test.total_words = total_selected_words
             test.save()
             user.start = 1
             user.test_id = test.id
@@ -216,17 +253,6 @@ def stop(request):
 
             if user.start:
                 user.start = 0
-                word_list_idx = 0
-                if request.session.has_key('word_list_idx'):
-                    word_list_idx = request.session['word_list_idx']
-                    request.session['word_list_idx'] = 0
-                if request.session.has_key('result'):
-                    del request.session['result']
-
-                test_id = user.test_id
-                test = Test.objects.get(id=test_id)
-                test.current_word_idx = word_list_idx - 1
-                test.save()
                 user.save()
             else:
                 logging.info("user is not attempting any test.")
@@ -262,15 +288,11 @@ def check(request):
             if word_info is None:
                 word_info = WordInfo.objects.create(word=word, uid=user.id)
             request.session['word'] = word
-            if not request.session.has_key('result'):
-                request.session['result'] = {}
+            result = Result.objects.get(test_id=test.id, word=word.lower())
+            result.answer = ans.lower()
             if word.lower() != ans.lower():
                 request.session['res'] = 'wrong'
                 test.wrong = test.wrong + 1
-                request.session['result'][word.lower()] = {
-                    'res': request.session['res'],
-                    'answer': ans.lower()
-                }
                 word_info.wrong = word_info.wrong + 1
             else:
                 request.session['res'] = 'correct'
@@ -279,6 +301,8 @@ def check(request):
 
             if not test.completed:
                 test.current_word_idx = test.current_word_idx + 1
+
+            result.save()
             test.save()
             word_info.save()
 
@@ -334,12 +358,6 @@ def resume_test(request):
                 if not test.completed:
                     user.start = 1
                     user.test_id = test_id
-                    request.session['word_list_idx'] = 0 if test.current_word_idx < 0 else test.current_word_idx
-                    if request.session.has_key('result'):
-                        del request.session['result']
-
-                    test = Test.objects.get(id=test_id)
-                    test.save()
                     user.save()
                 else:
                     logging.error('test is already completed.')
