@@ -170,6 +170,13 @@ def register(request):
         cpass = request.POST.get('cpass')
         if password != cpass:
             return login(request)
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            user = None
+        if user:
+            # user. is already registered
+            return render(request, 'app/login.html', {})
         user = User.objects.create(name=name, email=email, password=password)
         user.save()
         request.session['name'] = name
